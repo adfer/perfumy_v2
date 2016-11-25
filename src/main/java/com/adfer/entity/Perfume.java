@@ -1,11 +1,13 @@
 package com.adfer.entity;
 
 import com.adfer.enums.PerfumeCategory;
-import lombok.*;
+import lombok.Builder;
+import lombok.Getter;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.validation.constraints.NotNull;
 
 /**
  * Created by adrianferenc on 08.11.2016.
@@ -15,12 +17,13 @@ import javax.persistence.Id;
 @Entity
 public class Perfume {
 
-    @Id
-    @GeneratedValue
-    private Long id;
+  @Id
+  @GeneratedValue
+  private Long id;
 
-    private String brand;
-    private String name;
-    private PerfumeCategory category;
+  @NotNull
+  private String name;
 
+  private String brand;
+  private PerfumeCategory category;
 }

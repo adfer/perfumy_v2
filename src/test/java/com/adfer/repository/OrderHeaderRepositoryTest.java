@@ -2,12 +2,16 @@ package com.adfer.repository;
 
 import com.adfer.entity.Customer;
 import com.adfer.entity.OrderHeader;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.test.context.junit4.SpringRunner;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertNotNull;
@@ -19,89 +23,142 @@ import static org.junit.Assert.assertNotNull;
 @DataJpaTest
 public class OrderHeaderRepositoryTest {
 
-    @Autowired
-    private TestEntityManager entityManager;
+  @Autowired
+  private TestEntityManager entityManager;
 
-    @Autowired
-    private OrderHeaderRepository orderHeaderRepository;
+  @Autowired
+  private OrderHeaderRepository orderHeaderRepository;
 
-    @Test
-    public void shouldPersistOneOrderHeader() {
-        //given
-        Customer customer = Customer.builder()
-                .firstName("First name")
-                .lastName("Last name")
-                .build();
-        entityManager.persist(customer);
+  private Customer persCustomer;
 
-        OrderHeader orderHeader = OrderHeader.builder()
-                .customer(customer)
-                .build();
+  private OrderHeader orderHeader;
 
-        //when
-        orderHeaderRepository.save(orderHeader);
+  @Before
+  public void setUp() {
+    persCustomer = Customer.builder()
+        .firstName("First name")
+        .lastName("Last name")
+        .build();
+    entityManager.persist(persCustomer);
 
-        //then
-        OrderHeader persOrderHeader = entityManager.find(OrderHeader.class, orderHeader.getId());
+    orderHeader = OrderHeader.builder()
+        .customer(persCustomer)
+        .build();
+  }
 
-        assertThat(persOrderHeader).isNotNull();
-        assertThat(persOrderHeader.getId()).isNotNull();
-        assertThat(persOrderHeader.getId()).isEqualTo(orderHeader.getId());
-    }
+  @Test
+  public void shouldPersistOneOrderHeader() {
+    //when
+    orderHeaderRepository.save(orderHeader);
 
-    @Test
-    public void shouldReturnNullMissingOrderHeaderWithGivenId() {
-        //given
-        Customer customer = Customer.builder()
-                .firstName("First name")
-                .lastName("Last name")
-                .build();
-        entityManager.persist(customer);
+    //then
+    OrderHeader persOrderHeader = entityManager.find(OrderHeader.class, orderHeader.getId());
 
-        OrderHeader orderHeader = OrderHeader.builder()
-                .customer(customer)
-                .build();
+    assertThat(persOrderHeader).isNotNull();
+    assertThat(persOrderHeader.getId()).isNotNull();
+    assertThat(persOrderHeader.getId()).isEqualTo(orderHeader.getId());
+    assertThat(persOrderHeader.getCustomer()).isNotNull();
+  }
 
-        //when
-        Long orderHeaderId = entityManager.persistAndGetId(orderHeader, Long.class);
+  @Test
+  public void shouldReturnNullMissingOrderHeaderWithGivenId() {
+    //given
+    Long orderHeaderId = entityManager.persistAndGetId(orderHeader, Long.class);
 
-        //then
-        OrderHeader persOrderHeader = orderHeaderRepository.findOne(orderHeaderId + 100);
+    //when
+    OrderHeader persOrderHeader = orderHeaderRepository.findOne(orderHeaderId + 100);
 
-        assertThat(persOrderHeader).isNull();
-    }
+    //then
+    assertThat(persOrderHeader).isNull();
+  }
 
-    @Test
-    public void shouldUpdateAlreadyExistOrderHeader() {
-        //given
-        Customer customer = Customer.builder()
-                .firstName("First name")
-                .lastName("Last name")
-                .build();
+  @Test
+  public void shouldReturnOneOrderHeader() {
+    //given
+    Long orderHeaderId = entityManager.persistAndGetId(orderHeader, Long.class);
 
-        OrderHeader orderHeader = OrderHeader.builder()
-                .customer(customer)
-                .build();
+    //when
+    OrderHeader persOrderHeader = orderHeaderRepository.findOne(orderHeaderId);
 
-        Long customerId = entityManager.persistAndGetId(customer, Long.class);
-        Long orderHeaderId = entityManager.persistAndGetId(orderHeader, Long.class);
+    //then
+    assertThat(persOrderHeader).isNotNull();
+    assertThat(persOrderHeader.getId()).isEqualTo(orderHeaderId);
+  }
 
-        //when
-        OrderHeader updatedOrderHeader = orderHeaderRepository.findOne(orderHeaderId);
-        updatedOrderHeader.getCustomer().setFirstName("New first name");
-        updatedOrderHeader.getCustomer().setLastName("New last name");
-        orderHeaderRepository.save(updatedOrderHeader);
+  @Test
+  public void shouldReturnListWithTwoOrderHeaders() {
+    //given
+    OrderHeader orderHeader1 = OrderHeader.builder()
+        .customer(persCustomer)
+        .build();
+    entityManager.persist(orderHeader1);
 
-        //then
-        OrderHeader persOrderHeader = entityManager.find(OrderHeader.class, orderHeaderId);
+    OrderHeader orderHeader2 = OrderHeader.builder()
+        .customer(persCustomer)
+        .build();
+    entityManager.persist(orderHeader2);
 
-        assertNotNull(persOrderHeader);
-        assertThat(persOrderHeader.getId()).isEqualTo(orderHeaderId);
-        assertNotNull(persOrderHeader.getCustomer());
-        assertThat(persOrderHeader.getCustomer().getId()).isEqualTo(customerId);
-        assertThat(persOrderHeader.getCustomer().getFirstName()).isEqualTo("New first name");
-        assertThat(persOrderHeader.getCustomer().getLastName()).isEqualTo("New last name");
-    }
+    //given
+    Iterable<OrderHeader> persOrderHeaders = orderHeaderRepository.findAll();
 
+    //then
+    List<OrderHeader> orderHeaderList = new ArrayList<>();
+    persOrderHeaders.forEach(orderHeader -> orderHeaderList.add(orderHeader));
+
+    assertThat(orderHeaderList.size()).isEqualTo(2);
+  }
+
+  @Test
+  public void shouldUpdateAlreadyExistOrderHeader() {
+    //given
+    Long customerId = persCustomer.getId();
+    Long orderHeaderId = entityManager.persistAndGetId(orderHeader, Long.class);
+
+    //when
+    OrderHeader updatedOrderHeader = orderHeaderRepository.findOne(orderHeaderId);
+    updatedOrderHeader.getCustomer().setFirstName("New first name");
+    updatedOrderHeader.getCustomer().setLastName("New last name");
+    orderHeaderRepository.save(updatedOrderHeader);
+
+    //then
+    OrderHeader persOrderHeader = entityManager.find(OrderHeader.class, orderHeaderId);
+
+    assertNotNull(persOrderHeader);
+    assertThat(persOrderHeader.getId()).isEqualTo(orderHeaderId);
+    assertNotNull(persOrderHeader.getCustomer());
+    assertThat(persOrderHeader.getCustomer().getId()).isEqualTo(customerId);
+    assertThat(persOrderHeader.getCustomer().getFirstName()).isEqualTo("New first name");
+    assertThat(persOrderHeader.getCustomer().getLastName()).isEqualTo("New last name");
+  }
+
+  @Test
+  public void shouldNotUpdateOtherOrderHeader() {
+    //given
+    Long orderHeaderId = entityManager.persistAndGetId(orderHeader, Long.class);
+
+    Customer otherCustomer = Customer.builder()
+        .firstName("Other customer's first name")
+        .lastName("Other customer's last name")
+        .build();
+    entityManager.persist(otherCustomer);
+
+    OrderHeader otherOrderHeader = OrderHeader.builder()
+        .customer(otherCustomer)
+        .build();
+    Long otherOrderHeaderId = entityManager.persistAndGetId(otherOrderHeader, Long.class);
+
+    //when
+    OrderHeader updatedOrderHeader = orderHeaderRepository.findOne(orderHeaderId);
+    updatedOrderHeader.getCustomer().setFirstName("New first name");
+    updatedOrderHeader.getCustomer().setLastName("New last name");
+    orderHeaderRepository.save(updatedOrderHeader);
+
+    //then
+    OrderHeader persOtherOrderHeader = entityManager.find(OrderHeader.class, otherOrderHeaderId);
+
+    assertThat(persOtherOrderHeader.getId()).isEqualTo(otherOrderHeaderId);
+    assertThat(persOtherOrderHeader.getCustomer().getFirstName()).isEqualTo("Other customer's first name");
+    assertThat(persOtherOrderHeader.getCustomer().getLastName()).isEqualTo("Other customer's last name");
+  }
 
 }

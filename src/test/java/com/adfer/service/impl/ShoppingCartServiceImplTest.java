@@ -30,28 +30,28 @@ public class ShoppingCartServiceImplTest {
     public void shouldReturnTwoPerfumesFromShoppingCart() {
         //given
         Perfume perfume1 = Perfume.builder()
-                .id(0L)
+                .id(1L)
                 .brand("Brand 1")
                 .name("Perfume 1")
                 .build();
         Perfume perfume2 = Perfume.builder()
-                .id(1L)
+                .id(2L)
                 .brand("Brand 2")
                 .name("Perfume 2")
                 .build();
 
-        shoppingCartService.add(perfume1, 1);
-        shoppingCartService.add(perfume2, 1);
+        shoppingCartService.add(perfume1, 15);
+        shoppingCartService.add(perfume2, 15);
 
         //when
         List<ShoppingCartDetail> perfumes = shoppingCartService.getAll();
 
         //then
         assertThat(perfumes.size()).isEqualTo(2);
-        assertThat(perfumes.get(0).getPerfume().getId()).isEqualTo(0L);
+        assertThat(perfumes.get(0).getPerfume().getId()).isEqualTo(1L);
         assertThat(perfumes.get(0).getPerfume().getBrand()).isEqualTo("Brand 1");
         assertThat(perfumes.get(0).getPerfume().getName()).isEqualTo("Perfume 1");
-        assertThat(perfumes.get(1).getPerfume().getId()).isEqualTo(1L);
+        assertThat(perfumes.get(1).getPerfume().getId()).isEqualTo(2L);
         assertThat(perfumes.get(1).getPerfume().getBrand()).isEqualTo("Brand 2");
         assertThat(perfumes.get(1).getPerfume().getName()).isEqualTo("Perfume 2");
     }
@@ -70,8 +70,8 @@ public class ShoppingCartServiceImplTest {
                 .name("Perfume 2")
                 .build();
 
-        shoppingCartService.add(perfume1, 1);
-        shoppingCartService.add(perfume2, 1);
+        shoppingCartService.add(perfume1, 15);
+        shoppingCartService.add(perfume2, 15);
 
         //when
         boolean isRemoved = shoppingCartService.remove(1L);
@@ -81,6 +81,7 @@ public class ShoppingCartServiceImplTest {
         assertThat(isRemoved).isTrue();
         assertThat(allPerfumes.size()).isEqualTo(1);
         assertThat(allPerfumes.get(0).getPerfume()).isNotNull();
+        assertThat(allPerfumes.get(0).getPerfume().getId()).isEqualTo(2L);
         assertThat(allPerfumes.get(0).getPerfume().getName()).isEqualTo("Perfume 2");
     }
 
@@ -103,9 +104,9 @@ public class ShoppingCartServiceImplTest {
                 .name("Perfume 3")
                 .build();
 
-        shoppingCartService.add(perfume1, 1);
-        shoppingCartService.add(perfume2, 1);
-        shoppingCartService.add(perfume3, 1);
+        shoppingCartService.add(perfume1, 15);
+        shoppingCartService.add(perfume2, 15);
+        shoppingCartService.add(perfume3, 15);
 
         //when
         shoppingCartService.clear();
@@ -139,7 +140,7 @@ public class ShoppingCartServiceImplTest {
         assertThat(allPerfumes.get(0).getQuantity()).isEqualTo(2);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void addToShoppingCartShouldThrowExceptionMissingPerfumeId() {
         //given
         Perfume perfume = Perfume.builder()
@@ -151,13 +152,35 @@ public class ShoppingCartServiceImplTest {
         shoppingCartService.add(perfume, 1);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void addToShoppingCartShouldThrowExceptionWhenPerfumeIsNull() {
         //given
         Perfume perfume = null;
 
         //when
         shoppingCartService.add(perfume, 1);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void addToShoppingCartShouldThrowExceptionWhenQuantityIsZero() {
+        //given
+        Perfume perfume = Perfume.builder()
+            .id(1L)
+            .build();
+
+        //when
+        shoppingCartService.add(perfume, 0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void addToShoppingCartShouldThrowExceptionWhenQuantityIsLessThenZero() {
+        //given
+        Perfume perfume = Perfume.builder()
+            .id(1L)
+            .build();
+
+        //when
+        shoppingCartService.add(perfume, -10);
     }
 
     @Test
@@ -188,7 +211,7 @@ public class ShoppingCartServiceImplTest {
     }
 
     @Test
-    public void shouldReturnNullMissingPerfumeInShoppingCart() {
+    public void shouldReturnNullMissingPerfumeWithGivenIdInShoppingCart() {
         //given
         Perfume perfume1 = Perfume.builder()
                 .id(1L)
@@ -199,10 +222,19 @@ public class ShoppingCartServiceImplTest {
         shoppingCartService.add(perfume1, 1);
 
         //when
-        Optional<Perfume> perfume = shoppingCartService.get(2L);
+        Optional<Perfume> perfume = shoppingCartService.get(-200L);
 
         //then
         assertThat(perfume.isPresent()).isFalse();
+    }
+
+    @Test
+    public void shouldReturnEmptyListNoPerfumeInShoppingCart(){
+        //when
+        List<ShoppingCartDetail> perfumes = shoppingCartService.getAll();
+
+        //then
+        assertThat(perfumes).isEmpty();
     }
 
 }

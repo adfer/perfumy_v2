@@ -9,5 +9,5 @@ import java.util.List;
  * Created by adrianferenc on 13.11.2016.
  */
 public interface OrderService {
-    boolean makeOrder(OrderHeader orderHeader, List<OrderDetail> orderDetails);
+    OrderHeader makeOrder(OrderHeader orderHeader, List<OrderDetail> orderDetails);
 }

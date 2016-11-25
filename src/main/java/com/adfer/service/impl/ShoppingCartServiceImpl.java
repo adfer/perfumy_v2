@@ -4,6 +4,7 @@ import com.adfer.entity.Perfume;
 import com.adfer.model.ShoppingCart;
 import com.adfer.model.ShoppingCartDetail;
 import com.adfer.service.ShoppingCartService;
+import com.google.common.base.Preconditions;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.stereotype.Service;
@@ -25,9 +26,9 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
 
     @Override
     public void add(Perfume perfume, int quantity) {
-        notNull(perfume, "Perfume object is required to add to shopping cart");
-        notNull(perfume.getId(), "Item ID is required to add to shopping cart");
-        if (quantity <= 0) throw new IllegalArgumentException("Quantity must not be 0 or negative");
+        Preconditions.checkNotNull(perfume, "Perfume object is required to add to shopping cart");
+        Preconditions.checkNotNull(perfume.getId(), "Item ID is required to add to shopping cart");
+        Preconditions.checkArgument(quantity > 0, "Quantity must be greater then 0");
 
         ShoppingCartDetail detail = ShoppingCartDetail.builder()
                 .perfume(perfume)
