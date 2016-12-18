@@ -15,7 +15,11 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.util.Arrays;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 /**
  * Created by adrianferenc on 08.11.2016.
@@ -38,24 +42,25 @@ public class OrderDetailRepositoryTest {
     private OrderHeader persOrderHeader;
 
     private Perfume persPerfume;
+
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
 
         persCustomer = Customer.builder()
-            .firstName("First name")
-            .lastName("Last name")
-            .build();
+                .firstName("First name")
+                .lastName("Last name")
+                .build();
         entityManager.persist(persCustomer);
 
         persOrderHeader = OrderHeader.builder()
-            .customer(persCustomer)
-            .build();
+                .customer(persCustomer)
+                .build();
         entityManager.persist(persOrderHeader);
 
         persPerfume = Perfume.builder()
-            .name("Perfume 1")
-            .build();
+                .name("Perfume 1")
+                .build();
         entityManager.persist(persPerfume);
     }
 
@@ -63,7 +68,7 @@ public class OrderDetailRepositoryTest {
     public void shouldPersistOneOrderDetail() {
         //given
         OrderDetail orderDetail = OrderDetail.builder()
-                .header(persOrderHeader)
+                .orderHeaderId(persOrderHeader.getId())
                 .perfume(persPerfume)
                 .quantity(3)
                 .build();
@@ -77,8 +82,8 @@ public class OrderDetailRepositoryTest {
         assertThat(persOrderDetail).isNotNull();
         assertThat(persOrderDetail.getId()).isNotNull();
         assertThat(persOrderDetail.getId()).isEqualTo(orderDetail.getId());
-        assertThat(persOrderDetail.getHeader()).isNotNull();
-        assertThat(persOrderDetail.getHeader().getId()).isEqualTo(persOrderHeader.getId());
+        assertThat(persOrderDetail.getOrderHeaderId()).isNotNull();
+        assertThat(persOrderDetail.getOrderHeaderId()).isEqualTo(persOrderHeader.getId());
         assertThat(persOrderDetail.getPerfume()).isNotNull();
         assertThat(persOrderDetail.getPerfume().getId()).isEqualTo(persPerfume.getId());
         assertThat(persOrderDetail.getQuantity()).isEqualTo(3);
@@ -88,9 +93,9 @@ public class OrderDetailRepositoryTest {
     public void shouldThrowExceptionWhileSaveOrderDetailMissingPerfume() {
         //given
         OrderDetail orderDetail = OrderDetail.builder()
-            .header(persOrderHeader)
-            .quantity(3)
-            .build();
+                .orderHeaderId(persOrderHeader.getId())
+                .quantity(3)
+                .build();
 
         //when
         orderDetailRepository.save(orderDetail);
@@ -100,9 +105,9 @@ public class OrderDetailRepositoryTest {
     public void shouldThrowExceptionWhileSaveOrderDetailMissingOrderHeader() {
         //given
         OrderDetail orderDetail = OrderDetail.builder()
-            .perfume(persPerfume)
-            .quantity(3)
-            .build();
+                .perfume(persPerfume)
+                .quantity(3)
+                .build();
 
         //when
         orderDetailRepository.save(orderDetail);
@@ -112,9 +117,9 @@ public class OrderDetailRepositoryTest {
     public void shouldThrowExceptionWhileSaveOrderDetailMissingQuantity() {
         //given
         OrderDetail orderDetail = OrderDetail.builder()
-            .header(persOrderHeader)
-            .perfume(persPerfume)
-            .build();
+                .orderHeaderId(persOrderHeader.getId())
+                .perfume(persPerfume)
+                .build();
 
         //when
         orderDetailRepository.save(orderDetail);
@@ -124,10 +129,10 @@ public class OrderDetailRepositoryTest {
     public void shouldThrowExceptionWhileSaveOrderDetailNegativeQuantity() {
         //given
         OrderDetail orderDetail = OrderDetail.builder()
-            .header(persOrderHeader)
-            .perfume(persPerfume)
-            .quantity(-1)
-            .build();
+                .orderHeaderId(persOrderHeader.getId())
+                .perfume(persPerfume)
+                .quantity(-1)
+                .build();
 
         //when
         orderDetailRepository.save(orderDetail);
@@ -137,10 +142,10 @@ public class OrderDetailRepositoryTest {
     public void shouldThrowExceptionWhileSaveOrderDetailWithZeroQuantity() {
         //given
         OrderDetail orderDetail = OrderDetail.builder()
-            .header(persOrderHeader)
-            .perfume(persPerfume)
-            .quantity(0)
-            .build();
+                .orderHeaderId(persOrderHeader.getId())
+                .perfume(persPerfume)
+                .quantity(0)
+                .build();
 
         //when
         orderDetailRepository.save(orderDetail);
@@ -163,7 +168,7 @@ public class OrderDetailRepositoryTest {
                 .brand("Brand 1")
                 .build();
 
-        Perfume perfume2= Perfume.builder()
+        Perfume perfume2 = Perfume.builder()
                 .name("Perfume 2")
                 .brand("Brand 2")
                 .build();
@@ -172,7 +177,7 @@ public class OrderDetailRepositoryTest {
         entityManager.persist(perfume2);
 
         OrderDetail orderDetail = OrderDetail.builder()
-                .header(persOrderHeader)
+                .orderHeaderId(persOrderHeader.getId())
                 .perfume(perfume1)
                 .quantity(3)
                 .build();
@@ -195,4 +200,72 @@ public class OrderDetailRepositoryTest {
         assertThat(persOrderDetail.getQuantity()).isEqualTo(2);
     }
 
+    @Test
+    public void shouldRemoveOnlyOrderDetailsWithGivenOrderHeaderId() {
+        //given
+        OrderDetail orderDetail1 = OrderDetail.builder()
+                .orderHeaderId(persOrderHeader.getId())
+                .perfume(persPerfume)
+                .quantity(1)
+                .build();
+
+        OrderDetail orderDetail2 = OrderDetail.builder()
+                .orderHeaderId(persOrderHeader.getId())
+                .perfume(persPerfume)
+                .quantity(2)
+                .build();
+
+        OrderHeader otherOrderHeader = OrderHeader.builder()
+                .customer(persCustomer)
+                .build();
+        entityManager.persist(otherOrderHeader);
+
+        OrderDetail orderDetail3 = OrderDetail.builder()
+                .orderHeaderId(otherOrderHeader.getId())
+                .perfume(persPerfume)
+                .quantity(3)
+                .build();
+
+        orderDetailRepository.save(Arrays.asList(orderDetail1, orderDetail2, orderDetail3));
+
+        //when
+        orderDetailRepository.deleteByOrderHeaderId(persOrderHeader.getId());
+
+        //then
+        OrderDetail persOrderDetail1 = entityManager.find(OrderDetail.class, orderDetail1.getId());
+        OrderDetail persOrderDetail2 = entityManager.find(OrderDetail.class, orderDetail2.getId());
+        OrderDetail persOrderDetail3 = entityManager.find(OrderDetail.class, orderDetail3.getId());
+
+        assertThat(persOrderDetail1).isNull();
+        assertThat(persOrderDetail2).isNull();
+        assertThat(persOrderDetail3).isNotNull();
+    }
+
+    @Test
+    public void whenTwoOrderDetailsWithSameHeaderIdAndRemoveOneOfThemThenSecondDetailShouldRemainUntouched(){
+        //given
+        OrderDetail orderDetail1 = OrderDetail.builder()
+                .orderHeaderId(persOrderHeader.getId())
+                .perfume(persPerfume)
+                .quantity(1)
+                .build();
+
+        OrderDetail orderDetail2 = OrderDetail.builder()
+                .orderHeaderId(persOrderHeader.getId())
+                .perfume(persPerfume)
+                .quantity(2)
+                .build();
+
+        orderDetailRepository.save(Arrays.asList(orderDetail1, orderDetail2));
+
+        //when
+        orderDetailRepository.delete(orderDetail1.getId());
+
+        //then
+        OrderDetail persOrderDetail1 = entityManager.find(OrderDetail.class, orderDetail1.getId());
+        OrderDetail persOrderDetail2 = entityManager.find(OrderDetail.class, orderDetail2.getId());
+
+        assertThat(persOrderDetail1).isNull();
+        assertThat(persOrderDetail2).isNotNull();
+    }
 }

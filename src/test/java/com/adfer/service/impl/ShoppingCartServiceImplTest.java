@@ -44,7 +44,7 @@ public class ShoppingCartServiceImplTest {
         shoppingCartService.add(perfume2, 15);
 
         //when
-        List<ShoppingCartDetail> perfumes = shoppingCartService.getAll();
+        List<ShoppingCartDetail> perfumes = shoppingCartService.getAllDetails();
 
         //then
         assertThat(perfumes.size()).isEqualTo(2);
@@ -74,8 +74,8 @@ public class ShoppingCartServiceImplTest {
         shoppingCartService.add(perfume2, 15);
 
         //when
-        boolean isRemoved = shoppingCartService.remove(1L);
-        List<ShoppingCartDetail> allPerfumes = shoppingCartService.getAll();
+        boolean isRemoved = shoppingCartService.removeByPerfumeId(1L);
+        List<ShoppingCartDetail> allPerfumes = shoppingCartService.getAllDetails();
 
         //then
         assertThat(isRemoved).isTrue();
@@ -112,7 +112,7 @@ public class ShoppingCartServiceImplTest {
         shoppingCartService.clear();
 
         //then
-        assertThat(shoppingCartService.getAll().size()).isEqualTo(0);
+        assertThat(shoppingCartService.getAllDetails().size()).isEqualTo(0);
     }
 
     @Test
@@ -129,7 +129,7 @@ public class ShoppingCartServiceImplTest {
         shoppingCartService.add(perfume, 2);
 
         //then
-        List<ShoppingCartDetail> allPerfumes = shoppingCartService.getAll();
+        List<ShoppingCartDetail> allPerfumes = shoppingCartService.getAllDetails();
 
         assertThat(allPerfumes.size()).isEqualTo(1);
         assertThat(allPerfumes.get(0).getPerfume()).isNotNull();
@@ -201,13 +201,14 @@ public class ShoppingCartServiceImplTest {
         shoppingCartService.add(perfume2, 1);
 
         //when
-        Perfume perfume = shoppingCartService.get(2L).get();
+        ShoppingCartDetail shoppingCartDetail = shoppingCartService.getByPerfumeId(2L).get();
 
         //then
-        assertThat(perfume).isNotNull();
-        assertThat(perfume.getId()).isEqualTo(2L);
-        assertThat(perfume.getName()).isEqualTo("Perfume 2");
-        assertThat(perfume.getBrand()).isEqualTo("Brand 2");
+        assertThat(shoppingCartDetail).isNotNull();
+        assertThat(shoppingCartDetail.getPerfume()).isNotNull();
+        assertThat(shoppingCartDetail.getPerfume().getId()).isEqualTo(2L);
+        assertThat(shoppingCartDetail.getPerfume().getName()).isEqualTo("Perfume 2");
+        assertThat(shoppingCartDetail.getPerfume().getBrand()).isEqualTo("Brand 2");
     }
 
     @Test
@@ -222,19 +223,40 @@ public class ShoppingCartServiceImplTest {
         shoppingCartService.add(perfume1, 1);
 
         //when
-        Optional<Perfume> perfume = shoppingCartService.get(-200L);
+        Optional<ShoppingCartDetail> shoppingCartDetail = shoppingCartService.getByPerfumeId(-200L);
 
         //then
-        assertThat(perfume.isPresent()).isFalse();
+        assertThat(shoppingCartDetail.isPresent()).isFalse();
     }
 
     @Test
     public void shouldReturnEmptyListNoPerfumeInShoppingCart(){
         //when
-        List<ShoppingCartDetail> perfumes = shoppingCartService.getAll();
+        List<ShoppingCartDetail> perfumes = shoppingCartService.getAllDetails();
 
         //then
         assertThat(perfumes).isEmpty();
+    }
+
+    @Test
+    public void whenAddingPerfumeAlreadyExistingThenShouldIncreaseQuantity(){
+        //given
+        Perfume perfume1 = Perfume.builder()
+                .id(1L)
+                .brand("Brand 1")
+                .name("Perfume 1")
+                .build();
+
+        shoppingCartService.add(perfume1, 1);
+
+        //when
+        shoppingCartService.add(perfume1, 2);
+
+        //then
+        assertThat(shoppingCartService.getAllDetails().size()).isEqualTo(1);
+        assertThat(shoppingCartService.getByPerfumeId(1L).isPresent()).isTrue();
+        assertThat(shoppingCartService.getByPerfumeId(1L).get().getPerfume().getId()).isEqualTo(1L);
+        assertThat(shoppingCartService.getByPerfumeId(1L).get().getQuantity()).isEqualTo(3);
     }
 
 }

@@ -1,9 +1,6 @@
 package com.adfer.entity;
 
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import org.springframework.beans.factory.annotation.Required;
+import lombok.*;
 
 import javax.persistence.*;
 import javax.validation.constraints.Min;
@@ -13,6 +10,8 @@ import javax.validation.constraints.Min;
  */
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 @Entity
 public class OrderDetail {
@@ -20,9 +19,8 @@ public class OrderDetail {
     @Id
     @GeneratedValue
     private Long id;
-    @OneToOne
-    @JoinColumn(name = "order_header_id", nullable = false)
-    private OrderHeader header;
+    @Column(nullable = false)
+    private Long orderHeaderId;
     @OneToOne
     @JoinColumn(name = "perfume_id", nullable = false)
     private Perfume perfume;

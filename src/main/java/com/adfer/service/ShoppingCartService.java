@@ -13,12 +13,12 @@ public interface ShoppingCartService {
 
     void add(Perfume perfume, int quantity);
 
-    boolean remove(long perfumeId);
+    boolean removeByPerfumeId(long perfumeId);
 
-    Optional<Perfume> get(long perfumeId);
+    Optional<ShoppingCartDetail> getByPerfumeId(long perfumeId);
 
     void clear();
 
-    List<ShoppingCartDetail> getAll();
+    List<ShoppingCartDetail> getAllDetails();
 
 }

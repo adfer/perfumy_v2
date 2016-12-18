@@ -13,8 +13,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static org.springframework.util.Assert.notNull;
-
 /**
  * Created by adrianferenc on 08.11.2016.
  */
@@ -30,22 +28,24 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
         Preconditions.checkNotNull(perfume.getId(), "Item ID is required to add to shopping cart");
         Preconditions.checkArgument(quantity > 0, "Quantity must be greater then 0");
 
-        ShoppingCartDetail detail = ShoppingCartDetail.builder()
-                .perfume(perfume)
-                .quantity(quantity)
-                .build();
+        ShoppingCartDetail detail = shoppingCart.getShoppingCartDetails().get(perfume.getId());
+        if (detail == null) {
+            detail = ShoppingCartDetail.builder()
+                    .perfume(perfume)
+                    .build();
+        }
+        detail.setQuantity(detail.getQuantity() + quantity);
         shoppingCart.getShoppingCartDetails().put(perfume.getId(), detail);
     }
 
     @Override
-    public boolean remove(long perfumeId) {
+    public boolean removeByPerfumeId(long perfumeId) {
         return shoppingCart.getShoppingCartDetails().remove(perfumeId) != null;
     }
 
     @Override
-    public Optional<Perfume> get(long perfumeId) {
-        Optional<ShoppingCartDetail> shoppingCartDetail = Optional.ofNullable(shoppingCart.getShoppingCartDetails().get(perfumeId));
-        return shoppingCartDetail.isPresent() ? Optional.ofNullable(shoppingCartDetail.get().getPerfume()) : Optional.empty();
+    public Optional<ShoppingCartDetail> getByPerfumeId(long perfumeId) {
+        return Optional.ofNullable(shoppingCart.getShoppingCartDetails().get(perfumeId));
     }
 
     @Override
@@ -54,7 +54,7 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
     }
 
     @Override
-    public List<ShoppingCartDetail> getAll() {
+    public List<ShoppingCartDetail> getAllDetails() {
         return shoppingCart.getShoppingCartDetails().values().stream().collect(Collectors.toList());
     }
 }
